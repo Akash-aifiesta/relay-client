@@ -26,6 +26,9 @@ export async function parseSseStream(
 
   signal.addEventListener('abort', () => reader.cancel(), { once: true })
 
+  let currentEvent = 'message'
+  let currentData = ''
+
   try {
     while (true) {
       const { done, value } = await reader.read()
@@ -34,9 +37,6 @@ export async function parseSseStream(
       buffer += decoder.decode(value, { stream: true })
       const lines = buffer.split('\n')
       buffer = lines.pop() ?? ''
-
-      let currentEvent = 'message'
-      let currentData = ''
 
       for (const line of lines) {
         if (line.startsWith('event:')) {

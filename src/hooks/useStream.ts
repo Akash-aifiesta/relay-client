@@ -17,11 +17,7 @@ export function useStream() {
   const handleEventRef = useRef<(e: SseEvent, isResume: boolean) => void>(() => {})
 
   const updateState = useCallback((patch: Partial<ChatStore>) => {
-    setStore((prev) => {
-      const next = { ...prev, ...patch }
-      saveStore(next)
-      return next
-    })
+    setStore((prev) => ({ ...prev, ...patch }))
   }, [])
 
   const handleEvent = useCallback((e: SseEvent, isResume: boolean) => {
@@ -38,7 +34,7 @@ export function useStream() {
         const { seq, content } = JSON.parse(e.data) as { seq: number; content: string }
         setStore((prev) => {
           if (seq <= prev.lastSeq) return prev  // deduplicate
-          const next = {
+          return {
             ...prev,
             lastSeq: seq,
             tokens: [...prev.tokens, content],
@@ -46,8 +42,6 @@ export function useStream() {
               ? 'replaying'
               : prev.connectionState) as ConnectionState,
           }
-          saveStore(next)
-          return next
         })
       } catch { /* ignore */ }
       return
@@ -67,6 +61,9 @@ export function useStream() {
 
   // Keep ref in sync so mount effect always calls the latest version
   useEffect(() => { handleEventRef.current = handleEvent }, [handleEvent])
+
+  // Persist the committed state to URL + localStorage (runs after every render)
+  useEffect(() => { saveStore(store) }, [store])
 
   // On mount: if a previous chatId exists in localStorage, auto-resume.
   useEffect(() => {
