@@ -62,8 +62,10 @@ export function useStream() {
   // Keep ref in sync so mount effect always calls the latest version
   useEffect(() => { handleEventRef.current = handleEvent }, [handleEvent])
 
-  // Persist the committed state to URL + localStorage (runs after every render)
-  useEffect(() => { saveStore(store) }, [store])
+  useEffect(() => {
+    const id = window.setTimeout(() => saveStore(store), 300)
+    return () => window.clearTimeout(id)
+  }, [store])
 
   // On mount: if a previous chatId exists in localStorage, auto-resume.
   useEffect(() => {
@@ -72,7 +74,7 @@ export function useStream() {
 
     const ac = new AbortController()
     abortRef.current = ac
-    updateState({ connectionState: 'replaying' })
+    updateState({ connectionState: 'replaying', lastSeq: 0, tokens: [] })
 
     postResume(saved.chatId, 0, (e) => handleEventRef.current(e, true), ac.signal)
       .catch((err: unknown) => {
