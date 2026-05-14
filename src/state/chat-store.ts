@@ -18,38 +18,42 @@ export interface ChatStore {
 }
 
 // ── URL + localStorage persistence ───────────────────────────────────────
-// URL:           ?chat=<chatId>&seq=<lastSeq>   (shareable / bookmarkable)
-// localStorage:  userMessage                    (survives reload, not in URL)
+// URL:           ?chat=<chatId>   (set instantly on start, cleared on new chat)
+// localStorage:  seq, userMessage (debounced writes, survive reload)
 
 const MSG_KEY = 'rsc:msg'
+const SEQ_KEY = 'rsc:seq'
 
 export function loadStore(): ChatStore {
   const params = new URLSearchParams(window.location.search)
   const chatId = params.get('chat') ?? null
-  const lastSeq = Number(params.get('seq') ?? '0')
-  const userMessage = chatId
-    ? (localStorage.getItem(MSG_KEY) ?? null)
-    : null
+  const lastSeq = chatId ? Number(localStorage.getItem(SEQ_KEY) ?? '0') : 0
+  const userMessage = chatId ? (localStorage.getItem(MSG_KEY) ?? null) : null
   return { chatId, lastSeq, userMessage, tokens: [], connectionState: 'idle', errorMessage: null }
 }
 
 export function saveStore(store: ChatStore): void {
-  const params = new URLSearchParams(window.location.search)
   if (store.chatId) {
-    params.set('chat', store.chatId)
-    params.set('seq', String(store.lastSeq))
+    localStorage.setItem(SEQ_KEY, String(store.lastSeq))
     if (store.userMessage) localStorage.setItem(MSG_KEY, store.userMessage)
   } else {
-    params.delete('chat')
-    params.delete('seq')
+    localStorage.removeItem(SEQ_KEY)
     localStorage.removeItem(MSG_KEY)
   }
-  const query = params.toString()
-  const newUrl = `${window.location.pathname}${query ? '?' + query : ''}`
-  window.history.replaceState(null, '', newUrl)
+}
+
+export function saveUserMessage(message: string): void {
+  localStorage.setItem(MSG_KEY, message)
+}
+
+export function saveChatId(chatId: string): void {
+  const params = new URLSearchParams(window.location.search)
+  params.set('chat', chatId)
+  window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`)
 }
 
 export function clearStore(): void {
   localStorage.removeItem(MSG_KEY)
+  localStorage.removeItem(SEQ_KEY)
   window.history.replaceState(null, '', window.location.pathname)
 }

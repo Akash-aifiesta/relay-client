@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { type ChatStore, type ConnectionState, loadStore, saveStore, clearStore } from '../state/chat-store.js'
+import { type ChatStore, type ConnectionState, loadStore, saveStore, saveChatId, saveUserMessage, clearStore } from '../state/chat-store.js'
 import { postStream, postResume, type SseEvent } from '../services/stream-client.js'
 
 const MAX_RETRIES = 10
@@ -24,6 +24,7 @@ export function useStream() {
     if (e.event === 'start') {
       try {
         const { chatId } = JSON.parse(e.data) as { chatId: string }
+        saveChatId(chatId)
         updateState({ chatId, connectionState: 'connected' })
       } catch { /* ignore */ }
       return
@@ -137,6 +138,7 @@ export function useStream() {
   const startStream = useCallback(async (message: string) => {
     abortRef.current?.abort()
     clearStore()
+    saveUserMessage(message)
     retryRef.current = 0
     setStore({ chatId: null, lastSeq: 0, userMessage: message, tokens: [], connectionState: 'connected', errorMessage: null })
 
