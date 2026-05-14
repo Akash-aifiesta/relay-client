@@ -29,15 +29,6 @@ export function Sidebar({ onNewChat, onOpenSettings }: Props) {
       </button>
 
       <div className="sidebar-section">
-        <div className="sidebar-label">Architecture</div>
-        <div style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.8 }}>
-          <div>GLB → Cloud Run</div>
-          <div>Redis Streams (XREAD)</div>
-          <div>SSE · Resumable</div>
-        </div>
-      </div>
-
-      <div className="sidebar-section" style={{ marginTop: 8 }}>
         <div className="sidebar-label">API Target</div>
         <div style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.8, wordBreak: 'break-all' }}>
           {displayUrl}
